@@ -22,23 +22,34 @@ function getGoogleClient()
 
 function createGoogleCalendarEvent($e)
 {
-    if (!validDate($e['date'] ?? '') || !validTime($e['start_time'] ?? '')) {
-        return ['success' => false, 'error' => 'I couldn\'t make out the date or time — please try again.'];
+    if (!validDate($e['date'] ?? '')) {
+        return ['success' => false, 'error' => 'I couldn\'t make out the date — please try again.'];
     }
 
-    $tz    = new DateTimeZone('Asia/Dubai');
-    $start = new DateTime($e['date'] . ' ' . $e['start_time'], $tz);
-    $end   = validTime($e['end_time'] ?? '')
-        ? new DateTime($e['date'] . ' ' . $e['end_time'], $tz)
-        : (clone $start)->modify('+60 minutes');
+    $tz     = new DateTimeZone('Asia/Dubai');
+    $allDay = !validTime($e['start_time'] ?? '');
 
     $payload = [
         'summary'     => $e['title'] ?: 'Untitled',
         'location'    => $e['location'] ?? '',
         'description' => $e['description'] ?? '',
-        'start'       => ['dateTime' => $start->format('Y-m-d\TH:i:s'), 'timeZone' => 'Asia/Dubai'],
-        'end'         => ['dateTime' => $end->format('Y-m-d\TH:i:s'),   'timeZone' => 'Asia/Dubai'],
     ];
+
+    if ($allDay) {
+        $start = new DateTime($e['date'], $tz);
+        $end   = (clone $start)->modify('+1 day');           // Google end date is exclusive
+        $payload['start'] = ['date' => $start->format('Y-m-d')];
+        $payload['end']   = ['date' => $end->format('Y-m-d')];
+        $whenLabel = $start->format('D j M') . ' (all day)';
+    } else {
+        $start = new DateTime($e['date'] . ' ' . $e['start_time'], $tz);
+        $end   = validTime($e['end_time'] ?? '')
+            ? new DateTime($e['date'] . ' ' . $e['end_time'], $tz)
+            : (clone $start)->modify('+60 minutes');
+        $payload['start'] = ['dateTime' => $start->format('Y-m-d\TH:i:s'), 'timeZone' => 'Asia/Dubai'];
+        $payload['end']   = ['dateTime' => $end->format('Y-m-d\TH:i:s'),   'timeZone' => 'Asia/Dubai'];
+        $whenLabel = $start->format('D j M, g:i A') . ' – ' . $end->format('g:i A');
+    }
 
     $recurring = false;
     if (!empty($e['recurrence'])) {
@@ -57,8 +68,7 @@ function createGoogleCalendarEvent($e)
             'id'        => $created->id,
             'html_link' => $created->htmlLink,
             'title'     => $created->summary,
-            'start'     => $start->format('D j M, g:i A'),
-            'end'       => $end->format('g:i A'),
+            'when'      => $whenLabel,
             'recurring' => $recurring,
         ];
     } catch (Exception $e2) {

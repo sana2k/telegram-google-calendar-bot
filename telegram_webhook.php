@@ -227,7 +227,21 @@ function advanceCreate($chatId, $state, $text)
             break;
 
         case 'confirm':
-            sendTelegramMessage($chatId, "Please tap ✅ Confirm or ❌ Cancel below.");
+            $e = $state['event'] ?? null;
+            if (!$e) {
+                clearState($chatId);
+                sendTelegramMessage($chatId, "Nothing pending. Send /create to start again.");
+                break;
+            }
+            $when = (new DateTime($e['date'] . ' ' . $e['start_time'], new DateTimeZone('Asia/Dubai')))
+                ->format('D j M, g:i A');
+            sendTelegramMessage($chatId,
+                "You have an unconfirmed event:\n\n📝 <b>" . htmlspecialchars($e['title']) . "</b>\n🕒 {$when}"
+                . "\n\nConfirm it below, or send /cancel to discard.",
+                ['inline_keyboard' => [[
+                    ['text' => '✅ Confirm', 'callback_data' => 'create_confirm'],
+                    ['text' => '❌ Cancel',  'callback_data' => 'create_cancel'],
+                ]]]);
             break;
     }
 }
@@ -244,7 +258,7 @@ function showCreatePreview($chatId, $state, $messageId = null)
 
     if (empty($res['success']) || empty($e['date']) || empty($e['start_time'])) {
         clearState($chatId);
-        $msg = "❌ I couldn't work out the date/time from \"{$d['when']}\".\nStart again with /create.";
+        $msg = "❌ I couldn't work out the date from \"{$d['when']}\".\nStart again with /create.";
         if ($messageId) { editMessageText($chatId, $messageId, $msg); }
         else            { sendTelegramMessage($chatId, $msg); }
         return;
@@ -258,8 +272,12 @@ function showCreatePreview($chatId, $state, $messageId = null)
     $state['event'] = $e;
     saveState($chatId, $state);
 
-    $tz   = new DateTimeZone('Asia/Dubai');
-    $when = (new DateTime($e['date'] . ' ' . $e['start_time'], $tz))->format('D j M, g:i A');
+    $tz = new DateTimeZone('Asia/Dubai');
+    if (validTime($e['start_time'] ?? '')) {
+        $when = (new DateTime($e['date'] . ' ' . $e['start_time'], $tz))->format('D j M, g:i A');
+    } else {
+        $when = (new DateTime($e['date'], $tz))->format('D j M') . ' (all day)';
+    }
 
     $extra = '';
     if (!empty($e['recurrence'])) $extra .= "\n🔁 Repeating";
@@ -424,7 +442,7 @@ function handleCallback($chatId, $data, $callbackId, $messageId)
         clearState($chatId);
         if ($r['success']) {
             editMessageText($chatId, $messageId,
-                "✅ Created: <b>{$r['title']}</b>\n🕒 {$r['start']} – {$r['end']}"
+                "✅ Created: <b>{$r['title']}</b>\n🕒 {$r['when']}"
                 . ($r['recurring'] ? "\n🔁 Repeating" : "")
                 . ($loc !== '' ? "\n📍 {$loc}" : "")
                 . "\n\n{$r['html_link']}",
@@ -554,7 +572,7 @@ function processInstruction($chatId, $text, $isVoice = false)
 
         $r = createGoogleCalendarEvent($event);
         if ($r['success']) {
-            $reply = "✅ Created: <b>{$r['title']}</b>\n🕒 {$r['start']} – {$r['end']}"
+            $reply = "✅ Created: <b>{$r['title']}</b>\n🕒 {$r['when']}"
                    . ($r['recurring'] ? "\n🔁 Repeating" : "")
                    . (!empty($event['location']) ? "\n📍 {$event['location']}" : "")
                    . "\n\n{$r['html_link']}";

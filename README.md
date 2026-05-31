@@ -8,6 +8,22 @@ Built in plain PHP (no framework), it uses OpenAI Whisper for transcription and 
 
 ---
 
+## 📸 Screenshots
+
+| Voice → event | Text command | Guided `/create` |
+|:---:|:---:|:---:|
+| <img src="assets/voice-command.png" width="240"> | <img src="assets/text-command.png" width="240"> | <img src="assets/create-flow.png" width="240"> |
+
+| Guided `/update` | Quick edit | Conflict warning |
+|:---:|:---:|:---:|
+| <img src="assets/update.png" width="240"> | <img src="assets/edit.png" width="240"> | <img src="assets/conflict.png" width="240"> |
+
+| `/week` agenda | Command menu | `/start` |
+|:---:|:---:|:---:|
+| <img src="assets/agenda.png" width="240"> | <img src="assets/menu.png" width="240"> | <img src="assets/start.png" width="240"> |
+
+---
+
 ## ✨ Features
 
 - **Voice or text** — send a voice note or just type; both run the same pipeline.
@@ -16,6 +32,8 @@ Built in plain PHP (no framework), it uses OpenAI Whisper for transcription and 
 - **Guided flows with buttons** — `/create`, `/update`, `/delete` walk you through with inline‑keyboard buttons; messages edit in place, so no button clutter.
 - **Recurring events** — "every weekday at 9am", "every Monday in June from 10am to 12pm".
 - **Conflict detection** — warns you (and lets you create anyway) when a new event overlaps an existing one.
+- **All-day events** — a date with no time ("Friends wedding on June 2") creates an all-day entry.
+- **Verb-free creation** — "Dentist Thursday 9am" works; you don't have to say "create".
 - **Agendas** — `/today` and `/week` summaries.
 - **Quick actions** — every created event comes with ✏️ Edit / 🗑 Delete buttons.
 - **Duplicate‑safe** — acknowledges Telegram instantly so retries can't double‑book.
@@ -262,6 +280,8 @@ Move the Monday meeting to Wednesday
 Reschedule Tuesday's 3pm to 5pm
 Rename the Monday 10am meeting to Design Review
 Cancel the Tuesday 3pm
+Friends wedding on June 2
+Dentist Thursday at 9am
 ```
 
 **Guided commands:**
@@ -276,7 +296,7 @@ Cancel the Tuesday 3pm
 | `/cancel` | Abort the current guided flow |
 | `/help` | Show usage |
 
-**Phrasing tips:** always anchor to a **day**; add a **time** if two events share a day; `"from X to Y"` sets start and end; bare "3 o'clock" is read as 3 PM.
+**Phrasing tips:** always anchor to a **day**; add a **time** if two events share a day; `"from X to Y"` sets start and end; bare "3 o'clock" is read as 3 PM. A **date with no time** becomes an **all-day event**.
 
 ---
 

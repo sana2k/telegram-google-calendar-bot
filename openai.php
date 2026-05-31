@@ -79,6 +79,16 @@ Intent:
 - delete/cancel/remove -> delete_event
 - If the verb is unclear or mis-transcribed but the user clearly points at an
   existing event and gives a change, assume update_event.
+- If the message just names an event/activity (optionally with a date, time, or
+  place), has NO edit/delete verb, and does NOT refer to an event already in the
+  list, treat it as create_event.
+  "Friends wedding on June 2", "Dentist Thursday 9am", "Lunch with Sara tomorrow"
+  -> create_event.
+
+All-day events:
+- If a DATE is given but NO time, leave start_time and end_time as "". Do not invent
+  a time — empty time means an all-day event.
+  "Friends wedding on June 2" -> date="2026-06-02", start_time="", end_time="".
 
 Recurrence (create only):
 - A recurring event MUST still set "date" to the FIRST occurrence date (resolved
