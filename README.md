@@ -167,7 +167,8 @@ The bot only answers you, so it needs your numeric ID.
 ```bash
 git clone https://github.com/<you>/<repo>.git calendar-bot
 cd calendar-bot
-composer require google/apiclient:^2.0
+#composer require google/apiclient:^2.0
+composer install
 ```
 
 ### 2. Create the secrets directory (outside the web root)
