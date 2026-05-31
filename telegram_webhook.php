@@ -182,7 +182,7 @@ function clearState($chatId)
 function startCreateFlow($chatId)
 {
     saveState($chatId, ['flow' => 'create', 'step' => 'title', 'data' => []]);
-    sendTelegramMessage($chatId, "📝 What's the event?\n<i>(e.g. \"Meeting with Elite Sports\")</i>");
+    sendTelegramMessage($chatId, "📝 What's the event?\n<i>(e.g. \"Meeting with Jeff Bezos\")</i>");
 }
 
 function advanceFlow($chatId, $state, $text)
@@ -594,7 +594,7 @@ function helpText()
         . "• Schedule standup every weekday at 9am\n"
         . "• Team huddle every Monday in June from 10am to 12pm\n"
         . "• Move the Monday meeting to Wednesday\n"
-        . "• Rename the Monday 10am meeting to Elite Sports Sync\n"
+        . "• Rename the Monday 10am meeting to Remote Team Meeting\n"
         . "• Cancel the Tuesday 3pm\n\n"
         . "I'll warn you if a new event clashes with an existing one.\n\n"
         . "<b>Commands</b>\n"
