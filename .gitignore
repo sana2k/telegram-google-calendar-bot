@@ -1,0 +1,6 @@
+config.php
+credentials.json
+token.json
+*.log
+last_update.json
+/vendor/
