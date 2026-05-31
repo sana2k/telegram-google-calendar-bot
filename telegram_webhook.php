@@ -590,9 +590,9 @@ function helpText()
 {
     return "🤖 <b>Calendar Bot</b>\n"
         . "Type /create for a guided step-by-step, or just send a voice note / text like:\n\n"
-        . "• Create a meeting with Elite Sports on Monday at 10am\n"
+        . "• Create a meeting with Jeff Bezos on Monday at 10am\n"
         . "• Schedule standup every weekday at 9am\n"
-        . "• Team sync every Monday in June from 10am to 12pm\n"
+        . "• Team huddle every Monday in June from 10am to 12pm\n"
         . "• Move the Monday meeting to Wednesday\n"
         . "• Rename the Monday 10am meeting to Elite Sports Sync\n"
         . "• Cancel the Tuesday 3pm\n\n"
