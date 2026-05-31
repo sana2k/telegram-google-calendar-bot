@@ -72,17 +72,67 @@ calendar-bot/                     # web-accessible app directory
 ├── openai.php                    # Whisper transcription + GPT parsing
 ├── google_calendar.php           # Calendar create/read/update/delete + conflicts
 ├── google_oauth.php              # One-time Google authorization
-├── config.example.php            # Template — copy to config.php
+├── config.example.php            # Config template — copy to config.php
 ├── config.php                    # YOUR SECRETS  (git-ignored, never commit)
+├── credentials.example.json      # Google OAuth client template
 ├── composer.json
+├── LICENSE
 └── vendor/                       # git-ignored
 
 /var/www/secrets/calendar-bot/    # OUTSIDE the web root — not URL-reachable
-├── credentials.json              # Google OAuth client
-├── token.json                    # Google access/refresh token
+├── credentials.json              # Google OAuth client (the real one)
+├── token.json                    # Google access/refresh token (auto-generated)
 ├── audio/                        # temp voice files (auto-deleted)
 └── state/                        # per-conversation flow state (auto-expires)
 ```
+
+---
+
+## 📋 Getting your credentials
+
+You need four things before you install. Gather them first, then run [Setup](#-setup).
+
+### 1. Telegram bot token
+
+1. Open [@BotFather](https://t.me/BotFather) in Telegram and send `/newbot`.
+2. Give it a display name, then a username that ends in `bot` (e.g. `my_calendar_bot`).
+3. BotFather replies with a token like `123456789:ABCdef...`. That's your **`TELEGRAM_BOT_TOKEN`**.
+
+### 2. Your Telegram chat ID
+
+The bot only answers you, so it needs your numeric ID.
+
+1. Send any message (e.g. "hi") to the bot you just created.
+2. Run this, substituting your token:
+   ```bash
+   curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getUpdates"
+   ```
+3. In the JSON response, find `message.chat.id`. That number is your **`OWNER_CHAT_ID`**.
+
+> ⚠️ Do this **before** setting the webhook — `getUpdates` and an active webhook are mutually exclusive.
+
+### 3. OpenAI API key
+
+1. Go to [platform.openai.com](https://platform.openai.com/api-keys) → **API keys** → **Create new secret key**.
+2. Copy it immediately (it's shown only once). That's your **`OPENAI_API_KEY`**.
+3. Add billing credit under **Settings → Billing**. Usage is tiny — a fraction of a cent per command.
+
+### 4. Google `credentials.json` (and `token.json`)
+
+`credentials.json` identifies *your app* to Google. `token.json` is *your personal* access/refresh token and is generated automatically the first time you authorize (Setup step 5) — you never create it by hand.
+
+1. Open the [Google Cloud Console](https://console.cloud.google.com/) and create or select a project.
+2. **APIs & Services → Library** → search **Google Calendar API** → **Enable**.
+3. **APIs & Services → OAuth consent screen** → choose **External** → fill in the required app name / support email → **Save**. Under **Test users**, **add your own Google account** (see gotcha below).
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID** → application type **Web application**.
+5. Under **Authorized redirect URIs**, add your redirect URL **exactly** as it will appear in `config.php`'s `GOOGLE_REDIRECT_URI` (e.g. `https://yourdomain.com/path/to/google_oauth.php`).
+6. **Download JSON**, rename it to **`credentials.json`**, and place it in your secrets directory (created in Setup step 2). Use [`credentials.example.json`](credentials.example.json) as a reference for its shape.
+
+**Google gotchas (these cause most "it won't connect" issues):**
+
+- The consent screen stays in **Testing** mode unless you publish it, and a Testing app **only allows accounts listed as Test users** — if you skip step 3's test-user, authorization fails with `access_denied`.
+- The redirect URI must match `GOOGLE_REDIRECT_URI` **character for character** — scheme (`https`), domain, path, and trailing slash all count.
+- Your domain needs **valid HTTPS** — required for both the Google redirect and the Telegram webhook.
 
 ---
 
@@ -92,9 +142,7 @@ calendar-bot/                     # web-accessible app directory
 
 - A server with **PHP 8.x**, the **cURL extension**, and **HTTPS** (Telegram webhooks require a valid TLS certificate).
 - **Composer**.
-- A **Telegram bot token** (from [@BotFather](https://t.me/BotFather)).
-- An **OpenAI API key** with credit.
-- A **Google Cloud project** with the Calendar API enabled and an OAuth client.
+- The four credentials from [Getting your credentials](#-getting-your-credentials) above.
 
 ### 1. Clone & install
 
@@ -114,39 +162,31 @@ sudo chmod -R 700 /var/www/secrets/calendar-bot
 
 > Adjust the path so it is **beside or above** your document root, never inside it.
 
-### 3. Google OAuth client
-
-1. In the [Google Cloud Console](https://console.cloud.google.com/): create a project → enable **Google Calendar API**.
-2. Configure the **OAuth consent screen** (add yourself as a test user).
-3. Create an **OAuth 2.0 Client ID** of type **Web application**.
-4. Add the redirect URI: `https://yourdomain.com/path/to/google_oauth.php`.
-5. Download the client JSON as `credentials.json` and place it in `/var/www/secrets/calendar-bot/`.
-
-### 4. Configure
+### 3. Add your Google client & config
 
 ```bash
+# place the credentials.json you downloaded into the secrets dir:
+sudo mv /path/to/downloaded/credentials.json /var/www/secrets/calendar-bot/credentials.json
+sudo chown www-data:www-data /var/www/secrets/calendar-bot/credentials.json
+sudo chmod 600 /var/www/secrets/calendar-bot/credentials.json
+
+# create your config from the template:
 cp config.example.php config.php
 ```
+
+### 4. Configure
 
 Edit `config.php` and fill in your values (see [Configuration](#-configuration)).
 
 ### 5. Authorize Google (one time)
 
-Open `https://yourdomain.com/path/to/google_oauth.php` in a browser, grant access. A `token.json` is written into the secrets directory.
+Open `https://yourdomain.com/path/to/google_oauth.php` in a browser and grant access. A `token.json` is written into the secrets directory automatically.
 
 ### 6. Register the Telegram webhook
 
 ```bash
 curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook?url=https://yourdomain.com/path/to/telegram_webhook.php"
 ```
-
-Find your numeric chat ID (message the bot once **before** setting the webhook, then):
-
-```bash
-curl "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getUpdates"
-```
-
-Put that ID in `OWNER_CHAT_ID`.
 
 ### 7. Register the command menu (optional but nice)
 
